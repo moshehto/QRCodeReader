@@ -38,14 +38,13 @@
       (decodedText, decodedResult) => {
         console.log("QR Code:", decodedText);
         alert("Scanned: " + decodedText);
-        // Example: send to backend
-        /*
-        fetch("https://your-api-id.execute-api.region.amazonaws.com/checkin", {
+
+        fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ticket_id: decodedText })
         });
-        */
+
       },
       (errorMessage) => {
         // Optional: handle scan errors
