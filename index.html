@@ -1,0 +1,59 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    #reader {
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scan QR Code</h1>
+  <div id="reader"></div>
+
+  <script>
+    const scanner = new Html5Qrcode("reader");
+
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText, decodedResult) => {
+        console.log("QR Code:", decodedText);
+        alert("Scanned: " + decodedText);
+        // Example: send to backend
+        /*
+        fetch("https://your-api-id.execute-api.region.amazonaws.com/checkin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket_id: decodedText })
+        });
+        */
+      },
+      (errorMessage) => {
+        // Optional: handle scan errors
+        console.warn("QR Scan error:", errorMessage);
+      }
+    ).catch(err => {
+      console.error("Camera start error:", err);
+    });
+  </script>
+</body>
+</html>
