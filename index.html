@@ -42,11 +42,15 @@ const statusDiv = document.getElementById("status");
 scanner.start(
   { facingMode: "environment" },
   { fps: 10, qrbox: 250 },
-  (decodedText) => {
+  async (decodedText) => {
     console.log("✅ Scanned Text:", decodedText);
     statusDiv.textContent = "Checking ticket...";
 
-    // Extract the ticket ID from the scanned QR text
+    // 🔴 STOP scanning immediately
+    await scanner.stop();
+    document.getElementById("reader").innerHTML = ""; // optionally clear scanner UI
+
+    // Extract ticket ID
     const lines = decodedText.split('\n');
     const ticketIdLine = lines.find(line => line.includes("Ticket ID:"));
     const ticketId = ticketIdLine ? ticketIdLine.split(":")[1].trim() : "";
@@ -61,12 +65,9 @@ scanner.start(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticket_id: ticketId })
     })
-    .then(res => {
-      console.log("🔁 Status Code:", res.status);
-      return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
-      console.log("📦 Response JSON:", data);
+      console.log("📦 Response:", data);
       statusDiv.textContent = data.message || "Unknown response";
     })
     .catch(err => {
@@ -79,6 +80,7 @@ scanner.start(
   console.error("Camera init failed:", err);
 });
 </script>
+
 
 
 </body>
