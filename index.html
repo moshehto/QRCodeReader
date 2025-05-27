@@ -34,37 +34,41 @@
   <div id="reader"></div>
   <div id="status"></div>
 
-  <script>
-    const scanner = new Html5Qrcode("reader");
-    const statusDiv = document.getElementById("status");
+ 
+<script>
+const scanner = new Html5Qrcode("reader");
+const statusDiv = document.getElementById("status");
 
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      (decodedText) => {
-        console.log("QR Code:", decodedText);
-        statusDiv.textContent = "⏳ Checking ticket...";
+scanner.start(
+  { facingMode: "environment" },
+  { fps: 10, qrbox: 250 },
+  (decodedText) => {
+    console.log("✅ Scanned Text:", decodedText);
+    statusDiv.textContent = "Checking ticket...";
 
-        fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod/Checkin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ticket_id: decodedText })
-        })
-        .then(res => res.json())
-        .then(data => {
-          statusDiv.textContent = data.message || "✅ Response received";
-        })
-        .catch(err => {
-          console.error("API call failed:", err);
-          statusDiv.textContent = "❌ Something went wrong while checking in.";
-        });
-      },
-      (errorMessage) => {
-        console.warn("QR Scan error:", errorMessage);
-      }
-    ).catch(err => {
-      console.error("Camera start error:", err);
+    fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod/Checkin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticket_id: decodedText })
+    })
+    .then(res => {
+      console.log("🔁 Status Code:", res.status);
+      return res.json();
+    })
+    .then(data => {
+      console.log("📦 Response JSON:", data);
+      statusDiv.textContent = data.message || "Unknown response";
+    })
+    .catch(err => {
+      console.error("❌ Fetch Error:", err);
+      statusDiv.textContent = "❌ Something went wrong while checking in.";
     });
-  </script>
+  },
+  (err) => console.warn("Scan error:", err)
+).catch(err => {
+  console.error("Camera init failed:", err);
+});
+</script>
+
 </body>
 </html>
