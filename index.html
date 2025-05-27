@@ -1,87 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QR Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    h1 {
-      margin-bottom: 20px;
-    }
-    #reader {
-      width: 300px;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
-</head>
 <body>
   <h1>Scan QR Code</h1>
-  <div id="reader"></div>
+  <div id="reader" style="width: 300px;"></div>
   <div id="status"></div>
+  <button id="rescanBtn" style="display:none; margin-top: 20px;">🔄 Scan Another Ticket</button>
 
- 
-<script>
-const scanner = new Html5Qrcode("reader");
-const statusDiv = document.getElementById("status");
+  <script>
+    const scanner = new Html5Qrcode("reader");
+    const statusDiv = document.getElementById("status");
+    const rescanBtn = document.getElementById("rescanBtn");
 
-scanner.start(
-  { facingMode: "environment" },
-  { fps: 10, qrbox: 250 },
-  async (decodedText) => {
-    console.log("✅ Scanned Text:", decodedText);
-    statusDiv.textContent = "Checking ticket...";
+    function startScanner() {
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        async (decodedText) => {
+          console.log("✅ Scanned Text:", decodedText);
+          statusDiv.textContent = "Checking ticket...";
 
-    // 🔴 STOP scanning immediately
-    await scanner.stop();
-    document.getElementById("reader").innerHTML = ""; // optionally clear scanner UI
+          // Stop scanner
+          await scanner.stop();
+          document.getElementById("reader").innerHTML = "";
+          rescanBtn.style.display = "block";
 
-    // Extract ticket ID
-    const lines = decodedText.split('\n');
-    const ticketIdLine = lines.find(line => line.includes("Ticket ID:"));
-    const ticketId = ticketIdLine ? ticketIdLine.split(":")[1].trim() : "";
+          // Extract ticket ID
+          const lines = decodedText.split('\n');
+          const ticketIdLine = lines.find(line => line.includes("Ticket ID:"));
+          const ticketId = ticketIdLine ? ticketIdLine.split(":")[1].trim() : "";
 
-    if (!ticketId) {
-      statusDiv.textContent = "❌ Could not read ticket ID from QR code.";
-      return;
+          if (!ticketId) {
+            statusDiv.textContent = "❌ Could not read ticket ID from QR code.";
+            return;
+          }
+
+          fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod/Checkin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ticket_id: ticketId })
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log("📦 Response:", data);
+            statusDiv.textContent = data.message || "Unknown response";
+          })
+          .catch(err => {
+            console.error("❌ Fetch Error:", err);
+            statusDiv.textContent = "❌ Something went wrong while checking in.";
+          });
+        },
+        (err) => console.warn("Scan error:", err)
+      ).catch(err => {
+        console.error("Camera init failed:", err);
+      });
     }
 
-    fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod/Checkin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ticket_id: ticketId })
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log("📦 Response:", data);
-      statusDiv.textContent = data.message || "Unknown response";
-    })
-    .catch(err => {
-      console.error("❌ Fetch Error:", err);
-      statusDiv.textContent = "❌ Something went wrong while checking in.";
+    // Initial start
+    startScanner();
+
+    // Rescan button
+    rescanBtn.addEventListener("click", () => {
+      rescanBtn.style.display = "none";
+      statusDiv.textContent = "";
+      document.getElementById("reader").innerHTML = "<div></div>"; // force DOM to reload
+      startScanner();
     });
-  },
-  (err) => console.warn("Scan error:", err)
-).catch(err => {
-  console.error("Camera init failed:", err);
-});
-</script>
-
-
-
+  </script>
 </body>
-</html>
