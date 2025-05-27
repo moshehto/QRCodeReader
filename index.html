@@ -33,6 +33,7 @@
   <h1>Scan QR Code</h1>
   <div id="reader"></div>
   <div id="status"></div>
+  <div id="guestName"></div>
 
 
 <script>
@@ -72,15 +73,20 @@ function startScanner() {
         body: JSON.stringify({ ticket_id: ticketId })
       })
       .then(res => res.json())
-      .then(data => {
-        console.log("📦 Response:", data);
-        statusDiv.textContent = data.message || "Unknown response";
-        setTimeout(() => {
-          document.getElementById("reader").innerHTML = "<div></div>";
-          statusDiv.textContent = "";
-          startScanner();
-        }, 2000); // Wait 2 seconds before restarting scanner
-      })
+        .then(data => {
+          console.log("📦 Response:", data);
+          statusDiv.textContent = data.message || "Unknown response";
+        
+          const guestDiv = document.getElementById("guestName");
+          guestDiv.textContent = data.name ? `👤 Guest: ${data.name}` : "";
+        
+          setTimeout(() => {
+            document.getElementById("reader").innerHTML = "<div></div>";
+            statusDiv.textContent = "";
+            guestDiv.textContent = "";
+            startScanner();
+          }, 2000);
+        })
       .catch(err => {
         console.error("❌ Fetch Error:", err);
         statusDiv.textContent = "❌ Something went wrong while checking in.";
