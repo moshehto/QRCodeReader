@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,31 +22,44 @@
     #reader {
       width: 300px;
     }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <h1>Scan QR Code</h1>
   <div id="reader"></div>
+  <div id="status"></div>
 
   <script>
     const scanner = new Html5Qrcode("reader");
+    const statusDiv = document.getElementById("status");
 
     scanner.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
-      (decodedText, decodedResult) => {
+      (decodedText) => {
         console.log("QR Code:", decodedText);
-        alert("Scanned: " + decodedText);
+        statusDiv.textContent = "⏳ Checking ticket...";
 
-        fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod", {
+        fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod/Checkin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ticket_id: decodedText })
+        })
+        .then(res => res.json())
+        .then(data => {
+          statusDiv.textContent = data.message || "✅ Response received";
+        })
+        .catch(err => {
+          console.error("API call failed:", err);
+          statusDiv.textContent = "❌ Something went wrong while checking in.";
         });
-
       },
       (errorMessage) => {
-        // Optional: handle scan errors
         console.warn("QR Scan error:", errorMessage);
       }
     ).catch(err => {
