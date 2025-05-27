@@ -46,10 +46,20 @@ scanner.start(
     console.log("✅ Scanned Text:", decodedText);
     statusDiv.textContent = "Checking ticket...";
 
+    // Extract the ticket ID from the scanned QR text
+    const lines = decodedText.split('\n');
+    const ticketIdLine = lines.find(line => line.includes("Ticket ID:"));
+    const ticketId = ticketIdLine ? ticketIdLine.split(":")[1].trim() : "";
+
+    if (!ticketId) {
+      statusDiv.textContent = "❌ Could not read ticket ID from QR code.";
+      return;
+    }
+
     fetch("https://t3gg0lxjkd.execute-api.eu-north-1.amazonaws.com/prod/Checkin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ticket_id: decodedText })
+      body: JSON.stringify({ ticket_id: ticketId })
     })
     .then(res => {
       console.log("🔁 Status Code:", res.status);
@@ -69,6 +79,7 @@ scanner.start(
   console.error("Camera init failed:", err);
 });
 </script>
+
 
 </body>
 </html>
